@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+[[ -z ${ASDF_INSTALL_TYPE+x} ]] && echo "ASDF_INSTALL_TYPE is required" && exit 1
+[[ -z ${ASDF_INSTALL_VERSION+x} ]] && echo "ASDF_INSTALL_VERSION is required" && exit 1
+[[ -z ${ASDF_INSTALL_PATH+x} ]] && echo "ASDF_INSTALL_PATH is required" && exit 1
+
+function install() {
+  local install_type=$1
+  local version=$2
+  local install_path=$3
+
+  [ "$install_type" != "version" ] && echo "intall type, $install_type, is not supported" && exit 1
+
+  local tmp_download_dir=$(mktemp -d)
+  local repo="elixir-lsp/elixir-ls"
+  local download_filename="elixir-ls-v${version}.zip"
+  local download_url="https://github.com/${repo}/releases/download/v${version}/${download_filename}"
+
+  mkdir -p "${tmp_download_dir}"
+  pushd "${tmp_download_dir}" >/dev/null
+
+  echo "Downloading from ${download_url}"
+  curl -fLsS -H "Accept: application/octet-stream" -o "${download_filename}" "${download_url}"
+
+  mkdir -p unzip
+  pushd unzip >/dev/null
+
+  unzip "${tmp_download_dir}/${download_filename}"
+  mkdir -p ./bin
+  ln -s ../language_server.sh ./bin/elixir-ls
+  ln -s ../debugger.sh ./bin/elixir-ls-debugger
+  cp -fpr * "${install_path}"
+
+  popd >/dev/null
+  popd >/dev/null
+}
+
+install "${ASDF_INSTALL_TYPE}" "${ASDF_INSTALL_VERSION}" "${ASDF_INSTALL_PATH}"
