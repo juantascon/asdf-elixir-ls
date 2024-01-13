@@ -29,8 +29,19 @@ function install() {
 
   unzip "${tmp_download_dir}/${download_filename}"
   mkdir -p ./bin
-  ln -s ../language_server.sh ./bin/elixir-ls
-  ln -s ../debugger.sh ./bin/elixir-ls-debugger
+  # language_server.sh and debug_adapter.sh assume that the directory
+  # $(dirname "$0") also contains launch.sh. But we don't want to put launch.sh
+  # the PATH. So execute them using some wrappers that set $0.
+  cat <<EOF >./bin/elixir-ls
+#!/bin/sh
+exec ${install_path}/language_server.sh
+EOF
+  cat <<EOF >./bin/elixir-ls-debugger
+#!/bin/sh
+exec ${install_path}/debug_adapter.sh
+EOF
+  chmod +x ./bin/elixir-ls
+  chmod +x ./bin/elixir-ls-debugger
   cp -fpr * "${install_path}"
 
   popd >/dev/null
